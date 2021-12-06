@@ -10,10 +10,6 @@ Mix.install([
 ])
 ```
 
-```output
-:ok
-```
-
 ## Input
 
 ```elixir
@@ -51,10 +47,6 @@ defmodule Recursor do
 end
 ```
 
-```output
-{:module, Recursor, <<70, 79, 82, 49, 0, 0, 9, ...>>, {:recur, 2}}
-```
-
 ## Part 1
 
 <!-- livebook:{"reevaluate_automatically":true} -->
@@ -68,10 +60,6 @@ input
 |> Recursor.recur(80)
 ```
 
-```output
-5934
-```
-
 ## Part 2
 
 <!-- livebook:{"reevaluate_automatically":true} -->
@@ -83,8 +71,4 @@ input
 |> Enum.map(&String.to_integer/1)
 |> Enum.frequencies()
 |> Recursor.recur(256)
-```
-
-```output
-26984457539
 ```
