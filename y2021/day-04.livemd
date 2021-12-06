@@ -1,6 +1,6 @@
-# day4
+<!-- vim: syntax=markdown -->
 
-[![Run in Livebook](https://livebook.dev/badge/v1/blue.svg)](https://livebook.dev/run?url=https%3A%2F%2Fraw.githubusercontent.com%2Fegze%2Faoc_live%2Fmain%2Fy2021%2Fday_04.md)
+# Day 4
 
 ## Input
 

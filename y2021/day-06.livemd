@@ -1,0 +1,90 @@
+<!-- vim: syntax=markdown -->
+
+# Day 6
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+```output
+:ok
+```
+
+## Input
+
+```elixir
+input = Kino.Input.text("Please paste your input:")
+```
+
+## Recursor
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+defmodule Recursor do
+  def recur(timer_frequencies, 0) do
+    timer_frequencies
+    |> Enum.reduce(0, fn {_k, count}, acc -> acc + count end)
+  end
+
+  def recur(timer_frequencies, times) do
+    new_timer_frequencies =
+      timer_frequencies
+      |> Enum.reduce(%{}, fn {timer, count}, acc ->
+        case timer do
+          0 ->
+            acc
+            |> Map.update(6, count, &(&1 + count))
+            |> Map.update(8, count, &(&1 + count))
+
+          x ->
+            Map.update(acc, x - 1, count, &(&1 + count))
+        end
+      end)
+
+    recur(new_timer_frequencies, times - 1)
+  end
+end
+```
+
+```output
+{:module, Recursor, <<70, 79, 82, 49, 0, 0, 9, ...>>, {:recur, 2}}
+```
+
+## Part 1
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+input
+|> Kino.Input.read()
+|> String.split(",", trim: true)
+|> Enum.map(&String.to_integer/1)
+|> Enum.frequencies()
+|> Recursor.recur(80)
+```
+
+```output
+5934
+```
+
+## Part 2
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+input
+|> Kino.Input.read()
+|> String.split(",", trim: true)
+|> Enum.map(&String.to_integer/1)
+|> Enum.frequencies()
+|> Recursor.recur(256)
+```
+
+```output
+26984457539
+```
