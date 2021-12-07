@@ -1,0 +1,64 @@
+<!-- vim: syntax=markdown -->
+
+# Day 7
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Please paste your input:")
+```
+
+## Part 1
+
+```elixir
+frequencies =
+  input
+  |> Kino.Input.read()
+  |> String.split(",")
+  |> Enum.map(&String.to_integer/1)
+  |> Enum.frequencies()
+  |> Enum.to_list()
+
+frequencies
+|> Stream.cycle()
+|> Stream.chunk_every(length(frequencies), 1)
+|> Stream.take(length(frequencies))
+|> Enum.reduce(:infinity, fn [{n, _} | rest_frequencies], acc ->
+  count =
+    rest_frequencies
+    |> Enum.map(fn {x, freq} ->
+      abs(x - n) * freq
+    end)
+    |> Enum.sum()
+
+  if count < acc, do: count, else: acc
+end)
+```
+
+## Part 2
+
+```elixir
+frequencies
+|> Stream.cycle()
+|> Stream.chunk_every(length(frequencies), 1)
+|> Stream.take(length(frequencies))
+|> Enum.reduce(:infinity, fn [{n, _} | rest_frequencies], acc ->
+  count =
+    rest_frequencies
+    |> Enum.map(fn {x, freq} ->
+      abs(x - n) * (abs(x - n) + 1) / 2 * freq
+    end)
+    |> Enum.sum()
+
+  if count < acc, do: count, else: acc
+end)
+|> trunc()
+```
