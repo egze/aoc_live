@@ -1,0 +1,108 @@
+<!-- vim: syntax=markdown -->
+
+# Day 10
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Please paste your input:")
+```
+
+## NavigationSubsystem
+
+```elixir
+defmodule NavigationSubsystem do
+  @matching_characters %{
+    ?[ => ?],
+    ?{ => ?},
+    ?( => ?),
+    ?< => ?>
+  }
+
+  @opening_characters Map.keys(@matching_characters)
+  @closing_characters Map.values(@matching_characters)
+
+  @score_part_1 %{?) => 3, ?] => 57, ?} => 1197, ?> => 25137}
+  @score_part_2 %{?) => 1, ?] => 2, ?} => 3, ?> => 4}
+
+  defstruct stack: [], invalid_char: nil
+
+  def new(line) do
+    %__MODULE__{}
+    |> add_line(line)
+  end
+
+  def score_part_1(ns) do
+    @score_part_1[ns.invalid_char]
+  end
+
+  def score_part_2(ns) do
+    ns.stack
+    |> Enum.reduce(0, fn char, acc -> acc * 5 + @score_part_2[char] end)
+  end
+
+  defp add_line(ns, line) do
+    line
+    |> String.to_charlist()
+    |> Enum.reduce(ns, &add_char(&2, &1))
+  end
+
+  def complete?(%{stack: []}), do: true
+  def complete?(_), do: false
+
+  def valid?(%{invalid_char: nil}), do: true
+  def valid?(_), do: false
+
+  defp add_char(%{invalid_char: invalid_char} = ns, _char) when not is_nil(invalid_char), do: ns
+
+  defp add_char(%{stack: [char | rest_stack]} = ns, char) when char in @closing_characters do
+    %{ns | stack: rest_stack}
+  end
+
+  defp add_char(ns, char) when char in @closing_characters do
+    %{ns | invalid_char: char}
+  end
+
+  defp add_char(ns, char) when char in @opening_characters do
+    %{ns | stack: [Map.get(@matching_characters, char) | ns.stack]}
+  end
+end
+```
+
+## Part 1
+
+```elixir
+input
+|> Kino.Input.read()
+|> String.split("\n", trim: true)
+|> Enum.map(&NavigationSubsystem.new/1)
+|> Enum.reject(&NavigationSubsystem.valid?/1)
+|> Enum.map(&NavigationSubsystem.score_part_1/1)
+|> Enum.sum()
+```
+
+## Part 2
+
+```elixir
+input
+|> Kino.Input.read()
+|> String.split("\n", trim: true)
+|> Enum.map(&NavigationSubsystem.new/1)
+|> Enum.filter(&NavigationSubsystem.valid?/1)
+|> Enum.reject(&NavigationSubsystem.complete?/1)
+|> Enum.map(&NavigationSubsystem.score_part_2/1)
+|> Enum.sort()
+|> then(fn scores ->
+  scores
+  |> Enum.sort()
+  |> Enum.at(div(length(scores), 2))
+end)
+```
