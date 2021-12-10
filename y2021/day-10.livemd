@@ -99,7 +99,6 @@ input
 |> Enum.filter(&NavigationSubsystem.valid?/1)
 |> Enum.reject(&NavigationSubsystem.complete?/1)
 |> Enum.map(&NavigationSubsystem.score_part_2/1)
-|> Enum.sort()
 |> then(fn scores ->
   scores
   |> Enum.sort()
