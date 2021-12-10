@@ -40,6 +40,12 @@ defmodule NavigationSubsystem do
     |> add_line(line)
   end
 
+  def complete?(%{stack: []}), do: true
+  def complete?(_), do: false
+
+  def valid?(%{invalid_char: nil}), do: true
+  def valid?(_), do: false
+
   def score_part_1(ns) do
     @score_part_1[ns.invalid_char]
   end
@@ -54,12 +60,6 @@ defmodule NavigationSubsystem do
     |> String.to_charlist()
     |> Enum.reduce(ns, &add_char(&2, &1))
   end
-
-  def complete?(%{stack: []}), do: true
-  def complete?(_), do: false
-
-  def valid?(%{invalid_char: nil}), do: true
-  def valid?(_), do: false
 
   defp add_char(%{invalid_char: invalid_char} = ns, _char) when not is_nil(invalid_char), do: ns
 
