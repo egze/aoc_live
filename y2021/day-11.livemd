@@ -1,0 +1,114 @@
+<!-- vim: syntax=markdown -->
+
+# Day 11
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Please paste your input:")
+```
+
+```elixir
+input =
+  input
+  |> Kino.Input.read()
+  |> String.split("\n", trim: true)
+  |> Enum.map(&String.to_charlist/1)
+  |> Enum.with_index()
+  |> Enum.reduce(%{}, fn {line, r}, acc ->
+    line
+    |> Enum.with_index()
+    |> Enum.reduce(acc, fn {char, c}, acc -> Map.put(acc, {r, c}, char - ?0) end)
+  end)
+```
+
+## Recursor
+
+```elixir
+defmodule Recursor do
+  def step(grid, times) do
+    1..times
+    |> Enum.reduce(grid, fn _, grid_acc ->
+      grid = increase_all(grid_acc)
+
+      Enum.reduce(grid, grid, fn {coords, _}, acc ->
+        run(acc, coords)
+      end)
+    end)
+  end
+
+  defp run(grid, {r, c} = coords) do
+    case grid[coords] do
+      10 ->
+        Agent.update(:counter, &(&1 + 1))
+
+        grid
+        |> Map.put(coords, 0)
+        |> add({r - 1, c - 1})
+        |> add({r - 1, c})
+        |> add({r - 1, c + 1})
+        |> add({r, c - 1})
+        |> add({r, c + 1})
+        |> add({r + 1, c - 1})
+        |> add({r + 1, c})
+        |> add({r + 1, c + 1})
+
+      _ ->
+        grid
+    end
+  end
+
+  defp add(grid, coords) when not is_map_key(grid, coords), do: grid
+  defp add(grid, coords) when :erlang.map_get(coords, grid) == 10, do: grid
+  defp add(grid, coords) when :erlang.map_get(coords, grid) == 0, do: grid
+
+  defp add(grid, coords) do
+    grid
+    |> Map.update!(coords, &(&1 + 1))
+    |> run(coords)
+  end
+
+  defp increase_all(grid) do
+    grid
+    |> Enum.reduce(%{}, fn {coords, energy_level}, acc ->
+      Map.put(acc, coords, energy_level + 1)
+    end)
+  end
+end
+```
+
+## Part 1
+
+```elixir
+if Process.whereis(:counter), do: Agent.stop(:counter)
+{:ok, _pid} = Agent.start_link(fn -> 0 end, name: :counter)
+
+input
+|> Recursor.step(100)
+
+Agent.get(:counter, & &1)
+```
+
+## Part 2
+
+```elixir
+if Process.whereis(:counter), do: Agent.stop(:counter)
+{:ok, _pid} = Agent.start_link(fn -> 0 end, name: :counter)
+
+Stream.iterate(1, &(&1 + 1))
+|> Enum.reduce_while(input, fn step, grid ->
+  grid = Recursor.step(grid, 1)
+
+  if Enum.all?(grid, fn {_, energy_level} -> energy_level == 0 end),
+    do: {:halt, step},
+    else: {:cont, grid}
+end)
+```
