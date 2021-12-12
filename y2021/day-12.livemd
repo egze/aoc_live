@@ -1,0 +1,153 @@
+<!-- vim: syntax=markdown -->
+
+# Day 12
+
+## Setup
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+## Input
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+input = Kino.Input.textarea("Please paste your input:")
+```
+
+## Parse
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+map =
+  input
+  |> Kino.Input.read()
+  |> String.split("\n", trim: true)
+  |> Enum.reduce(%{}, fn line, acc ->
+    [a, b] = String.split(line, "-")
+
+    acc
+    |> then(fn acc ->
+      if b != "start", do: Map.update(acc, a, [b], &[b | &1]), else: acc
+    end)
+    |> then(fn acc ->
+      if a != "start", do: Map.update(acc, b, [a], &[a | &1]), else: acc
+    end)
+  end)
+```
+
+## Submarine
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+defmodule Submarine do
+  def travel(map, start_node) do
+    travel(map, start_node, map[start_node], [], [])
+  end
+
+  defp travel(_map, "end", _, path, all_paths) do
+    end_path = ["end" | path] |> Enum.reverse()
+    [end_path | all_paths]
+  end
+
+  defp travel(_map, _node, [], _path, all_paths) do
+    all_paths
+  end
+
+  defp travel(_map, _node, _nodes, ["end" | _], all_paths) do
+    all_paths
+  end
+
+  defp travel(map, node, [next_node | rest], path, all_paths) do
+    if can_visit?(path, node) do
+      travel(map, node, rest, path, all_paths) ++
+        travel(map, next_node, map[next_node], [node | path], all_paths)
+    else
+      all_paths
+    end
+  end
+
+  defp can_visit?(path, node) do
+    case String.upcase(node) do
+      ^node -> true
+      _ -> node not in path
+    end
+  end
+end
+```
+
+## BetterSubmarine
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+defmodule BetterSubmarine do
+  def travel(map, start_node) do
+    travel(map, start_node, map[start_node], [], [])
+  end
+
+  defp travel(_map, "end", _, path, all_paths) do
+    [["end" | path] | all_paths] |> Enum.reverse()
+  end
+
+  defp travel(_map, _node, [], _path, all_paths) do
+    all_paths
+  end
+
+  defp travel(_map, _node, _nodes, ["end" | _], all_paths) do
+    all_paths
+  end
+
+  defp travel(map, node, [next_node | rest], path, all_paths) do
+    if can_visit?(path, node) do
+      travel(map, node, rest, path, all_paths) ++
+        travel(map, next_node, map[next_node], [node | path], all_paths)
+    else
+      all_paths
+    end
+  end
+
+  defp can_visit?(path, node) do
+    case String.upcase(node) do
+      ^node ->
+        true
+
+      _ ->
+        path
+        |> Enum.reject(fn node -> String.upcase(node) == node end)
+        |> Enum.frequencies()
+        |> then(fn fqs ->
+          any_node_visited_twice? = Enum.any?(fqs, fn {_n, fq} -> fq > 1 end)
+          this_node_times_visited = Map.get(fqs, node, 0)
+
+          this_node_times_visited == 0 or !any_node_visited_twice?
+        end)
+    end
+  end
+end
+```
+
+## Part 1
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+Submarine.travel(map, "start")
+|> Enum.count()
+```
+
+## Part 2
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+BetterSubmarine.travel(map, "start")
+|> Enum.count()
+```
