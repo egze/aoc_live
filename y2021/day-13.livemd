@@ -1,0 +1,147 @@
+<!-- vim: syntax=markdown -->
+
+# Day 13
+
+## Setup
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"},
+  {:nimble_parsec, "~> 1.2"}
+])
+```
+
+## Input
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+input = Kino.Input.textarea("Please paste your input:")
+```
+
+## Parse
+
+```elixir
+defmodule OrigamiParser do
+  import NimbleParsec
+
+  defparsec(
+    :parse,
+    repeat(
+      integer(min: 1)
+      |> ignore(string(","))
+      |> integer(min: 1)
+      |> ignore(string("\n"))
+      |> tag(:coords)
+    )
+    |> ignore(string("\n"))
+    |> repeat(
+      ignore(string("fold along "))
+      |> choice([
+        string("x"),
+        string("y")
+      ])
+      |> ignore(string("="))
+      |> integer(min: 1)
+      |> tag(:fold)
+      |> optional(ignore(string("\n")))
+    )
+  )
+end
+```
+
+```elixir
+{:ok, result, "", _, _, _} =
+  input
+  |> Kino.Input.read()
+  |> OrigamiParser.parse()
+
+grid =
+  result
+  |> Keyword.get_values(:coords)
+  |> Enum.reduce(%{}, fn [x, y], acc ->
+    Map.put(acc, {x, y}, 1)
+  end)
+
+folds =
+  result
+  |> Keyword.get_values(:fold)
+  |> Enum.reduce([], fn
+    ["y", i], acc -> [{:y, i} | acc]
+    ["x", i], acc -> [{:x, i} | acc]
+  end)
+  |> Enum.reverse()
+
+:ok
+```
+
+## Part 1
+
+```elixir
+fold_y = fn grid, i ->
+  grid
+  |> Enum.reduce(%{}, fn {{x, y}, _count}, acc ->
+    cond do
+      y < i ->
+        Map.update(acc, {x, y}, 1, &(&1 + 1))
+
+      y > i ->
+        Map.update(acc, {x, i - (y - i)}, 1, &(&1 + 1))
+
+      :else ->
+        acc
+    end
+  end)
+end
+
+fold_x = fn grid, i ->
+  grid
+  |> Enum.reduce(%{}, fn {{x, y}, _count}, acc ->
+    cond do
+      x < i ->
+        Map.update(acc, {x, y}, 1, &(&1 + 1))
+
+      x > i ->
+        Map.update(acc, {i - (x - i), y}, 1, &(&1 + 1))
+
+      :else ->
+        acc
+    end
+  end)
+end
+```
+
+```elixir
+[first_fold | _] = folds
+
+case first_fold do
+  {:x, i} -> fold_x.(grid, i) |> Enum.count()
+  {:y, i} -> fold_y.(grid, i) |> Enum.count()
+end
+```
+
+## Part 2
+
+```elixir
+result =
+  folds
+  |> Enum.reduce(grid, fn fold, acc ->
+    case fold do
+      {:x, i} -> fold_x.(acc, i)
+      {:y, i} -> fold_y.(acc, i)
+    end
+  end)
+
+max_x = Enum.map(result, fn {{x, _}, _} -> x end) |> Enum.max()
+max_y = Enum.map(result, fn {{_, y}, _} -> y end) |> Enum.max()
+
+for y <- 0..max_y do
+  for x <- 0..max_x do
+    if Map.has_key?(result, {x, y}), do: "⬛️", else: "⬜️"
+  end
+  |> Enum.join()
+  |> IO.puts()
+end
+```
